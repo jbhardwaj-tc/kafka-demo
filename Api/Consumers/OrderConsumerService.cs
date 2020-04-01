@@ -25,23 +25,42 @@ namespace Api.Consumers
         #region Overrides of BackgroundService
 
         /// <inheritdoc />
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while (!stoppingToken.IsCancellationRequested)
+            return Task.Factory.StartNew(async () =>
             {
-                try
+                while (!stoppingToken.IsCancellationRequested)
                 {
-                    var consumer = new ConsumerWrapper(_consumerConfig, "orders");
-                    var request = consumer.ReadMessage(stoppingToken);
-
-                    var orderRequest = JsonConvert.DeserializeObject<OrderRequest>(request);
-                    orderRequest.Status = Status.Completed;
-
-                    var producerWrapper = new ProducerWrapper(_producerConfig, "pollrequests");
-                    await producerWrapper.WriteMessage(JsonConvert.SerializeObject(orderRequest));
+                    try
+                    {
+                        var consumer = new ConsumerWrapper(_consumerConfig, "orders");
+                        var request = consumer.ReadMessage(stoppingToken);
+                        var orderRequest = JsonConvert.DeserializeObject<OrderRequest>(request.message);
+                        orderRequest.Status = Status.Completed;
+                        var producerWrapper = new ProducerWrapper(_producerConfig, "pollrequests");
+                        await producerWrapper.WriteMessage(JsonConvert.SerializeObject(orderRequest));
+                    }
+                    catch (Exception exception)
+                    {
+                    }
                 }
-                catch (Exception) { }
-            }
+            });
+
+            //while (!stoppingToken.IsCancellationRequested)
+            //{
+            //    try
+            //    {
+            //        var consumer = new ConsumerWrapper(_consumerConfig, "orders");
+            //        var request = consumer.ReadMessage(stoppingToken);
+
+            //        var orderRequest = JsonConvert.DeserializeObject<OrderRequest>(request);
+            //        orderRequest.Status = Status.Completed;
+
+            //        var producerWrapper = new ProducerWrapper(_producerConfig, "pollrequests");
+            //        await producerWrapper.WriteMessage(JsonConvert.SerializeObject(orderRequest));
+            //    }
+            //    catch (Exception) { }
+            //}
         }
 
         #endregion

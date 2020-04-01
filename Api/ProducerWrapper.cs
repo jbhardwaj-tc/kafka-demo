@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading.Tasks;
 using Confluent.Kafka;
 
@@ -15,13 +16,28 @@ namespace Api
             this._topicName = topicName;
             this._producer = new ProducerBuilder<string, string>(config).Build();
         }
-        public async Task<string> WriteMessage(string message)
+        public async Task<string> WriteMessage(string message, int? retryCount = null, DateTime? retryDate = null)
         {
-            var dr = await this._producer.ProduceAsync(this._topicName, new Message<string, string>()
+            var kafkaMessage = new Message<string, string>()
             {
                 Key = Rand.Next(5).ToString(),
-                Value = message
-            });
+                Value = message,
+                Headers = new Headers()
+            };
+
+
+
+            if (retryCount.HasValue)
+            {
+                kafkaMessage.Headers.Add("retry_count", Encoding.UTF8.GetBytes(retryCount.Value.ToString()));
+            }
+
+            if (retryDate.HasValue)
+            {
+                kafkaMessage.Headers.Add("retry_date", Encoding.UTF8.GetBytes(retryDate.ToString()));
+            }
+
+            var dr = await this._producer.ProduceAsync(this._topicName, kafkaMessage);
             return $"KAFKA => Delivered '{dr.Value}' to '{dr.TopicPartitionOffset}'";
         }
     }

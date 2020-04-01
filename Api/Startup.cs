@@ -27,7 +27,9 @@ namespace Api
             services.AddControllers();
             services.Configure<ProducerConfig>(Configuration.GetSection(nameof(ProducerConfig)));
             services.Configure<ConsumerConfig>(Configuration.GetSection(nameof(ConsumerConfig)));
-            services.AddHostedService<OrderConsumerService>();
+            services.AddHostedService<OrderProcessConsumerService>();
+            services.AddHostedService<OrderRetryConsumerService>();
+            //services.AddHostedService<OrderConsumerService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
